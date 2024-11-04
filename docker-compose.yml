@@ -1,0 +1,36 @@
+services:
+  apache:
+    image: httpd:2.4-alpine
+    ports:
+      - 18080:80
+    volumes:
+      - ./apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
+      - ./apache/images:/usr/local/apache2/htdocs/images/my-books
+    depends_on:
+      - tomcat
+
+  tomcat:
+    image: tomcat:10-jdk17-temurin-jammy
+    volumes:
+      - ./tomcat/my-books.war:/usr/local/tomcat/webapps/my-books.war
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/my-books-db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: password
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: my-books-db
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/data.csv:/docker-entrypoint-initdb.d/data.csv
+      - ./db/my.cnf:/etc/mysql/conf.d/my.cnf
+      - db_data:/var/lib/mysql
+    command: --secure-file-priv=/docker-entrypoint-initdb.d
+
+volumes:
+  db_data:
